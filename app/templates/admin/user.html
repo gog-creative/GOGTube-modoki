@@ -1,0 +1,95 @@
+<!-- layout.htmlをテンプレートに拡張する-->
+{% extends "admin/layout.html" %}
+<!-- block content ~ endblock-の範囲がテンプレートの同宣言範囲に差し込まれる -->
+{% block content %}
+<h1>ユーザーページ</h1>
+<h2>{{ user.name }}</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>アカウント名</th>
+            <th>メールアドレス</th>
+            <th>アカウントID</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>{{ user.get("name") }}</td>
+            <td>{{ user.get("email") }}</td>
+            <td>{{ user.get("id") }}</td>
+        </tr>
+    </tbody>
+</table>
+
+<section>
+    <div id="table" style="overflow-x: scroll; padding-top: 10;">
+      <table>
+        <thead>
+          <tr>
+            <th>セッションID</th>
+            <th>状態</th>
+            <th>タイトル</th>
+            <th>リクエスト/完了日時</th>
+            <th>最低保存期間</th>
+            <th>ファイルサイズ</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for task in dic %}
+          <tr>
+            <td>
+              <a href="{{ url_for('status',uuid = task.uuid) }}">状態ページ</a>
+            </td>
+            {% if task.status == "completed" %}
+            <td style="background-color: rgb(0, 190, 41); color: white;">完了</td>
+            {% elif task.status == "downloading" %}
+            <td style="background-color: rgb(42, 106, 224); color: white;">ダウンロード中<br>（{{task.downloaded_percent}} %）</td>
+            {% elif task.status == "queue" %}
+            <td style="background-color: rgb(206, 141, 2); color: white;">順番待ち</td>
+            {% elif task.status == "deleted" %}
+            <td style="background-color: rgb(70, 70, 70); color: white;">削除済み</td>
+            {% elif task.status == "dl_failure" %}
+            <td style="background-color: rgb(241, 35, 35); color: white;">ダウンロード失敗</td>
+            {% else %}
+            <td style="background-color: rgb(116, 0, 0); color: white;">不明</td>
+            {% endif %}
+            <td style="max-width: 50vw;">
+              <a href="{{task.url}}" style="max-width: 100%; overflow-x: hidden; text-overflow: ellipsis;">{{task.info["title"]}}</a>
+            </td>
+            
+            <td>
+              <p>
+                {{ task.time["request"].strftime(config.storage["time_format"]) }}
+                {% if task.status == "completed" %}
+                <br>{{ task.time["finish"].strftime(config.storage["time_format"]) }}
+                {% endif %}
+              </p>
+            </td>
+            <td>
+              {{task.time["min_save_period"]}} 分
+            </td>
+            <td>{{ task.file_size }}MB</td>
+            <td>
+              {% if task.status == "completed" %}
+              <a href="{{ url_for('admin_command',id=task.uuid,command='delete') }}">
+                <button style="background-color: red; padding: 10px;">削除</button>
+              </a>
+              {% elif task.status == "queue" %}
+              <a href="{{ url_for('admin_command',id=task.uuid,command='priority') }}">
+                <button style="padding: 10px;">優先</button>
+              </a>
+              {% endif %}
+              <a href="{{ url_for('admin_command',id=task.uuid,command='log') }}">
+                <button style="padding: 10px;">ログ</button>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+{% endblock %}

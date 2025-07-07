@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name=”robots” content=”noindex” >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="{{url_for('static', filename='icons/512.png')}}" type="image/png">
+    <link rel="apple-touch-icon" href="{{url_for('static', filename='icons/512.png')}}" type="image/png">
+    <link rel="stylesheet" href="../static/css/mvp.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mvp.css')}}"> 
+    <title>エラー | GOGTubeもどき</title>
+</head>
+<body>
+    <header>
+        <header>
+            <h1>GOGTubeもどき<br><small>Created by ごぐ</small><br></h1>
+            <small>YoutubeMP3もどきをパクった動画ダウンロードサイト、「YouTubeもどきもどき」です。</small><br>
+            <a href="/">ホーム</a>
+            <a href="/status">ダウンロード状況</a>
+        </header>
+    </header>
+    <main>
+        <h1>エラー</h1>
+        <p>{{ output.error }}</p>
+    </main>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name=”robots” content=”noindex” >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="{{url_for('static', filename='icons/512.png')}}" type="image/png">
+    <link rel="apple-touch-icon" href="{{url_for('static', filename='icons/512.png')}}" type="image/png">
+    {% if output.status != "completed" and output.status != "dl_failure" and output.status != "deleted" %}
+    <noscript>
+        <meta http-equiv="refresh" content="2">
+    </noscript>
+    {%endif%}
+    <link rel="stylesheet" href="../static/css/mvp.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mvp.css')}}"> 
+    <style>
+        th {text-align: left;}
+    </style>
+    <title>ダウンロード状況 | GOGTubeもどき</title>
+</head>
+<body>
+    <header>
+        <h1>YouTube もどきもどき<br><small>Python実験場</small><br></h1>
+        <small>YoutubeMP3もどきをパクった動画ダウンロードサイト、「GOGTubeもどき」です。</small><br>
+        <a href="/">ホーム</a>
+        <a href="/status">ダウンロード状況</a>
+    </header>
+
+    <main>
+        <h1>動画ダウンロード状況</h1>
+        <h2>{{ output.info.title }}<br><small>{{ output.info.uploader }}</small></h2>
+        <p id="status-message">{{ output.message }}<br><small><a onclick="location.reload()">ページをリロードして最新情報を取得</a></small></p>
+        
+        {% if output.status == "completed" or output.status == "deleted" %}
+        <!--ダウンロード成功の場合-->
+        {% if output.status == "completed" and item.play_directly == False%}
+        <video src="{{ output.url }}" style="width: 100%; max-height: 90vh;" controls></video>
+        <a href="{{ output.url }}"><button>ダウンロード</button></a>
+        
+        <!--直接再生の場合-->
+        {% elif output.status == "completed" and item.play_directly == True %}
+        <video src="{{ output.direct_url }}" style="width: 100%; max-height: 90vh;" controls></video>
+        
+        <a href="{{ output.direct_url }}" download="true"><button>ダウンロード</button></a>
+        <form action="/request" method="POST">
+            <input type="hidden" name="link" value="{{output.info.webpage_url}}">
+            <input type="hidden" name="file_type" value="video">
+            <input type="hidden" name="play_directly" value="off">
+            <input type="hidden" name="video_codec" value="">
+            <input type="hidden" name="audio_codec" value="">
+            <button type="submit">高画質版をダウンロード</button>
+        </form>
+        {% endif %}
+        
+        <h1>動画の情報</h1>
+        <h2>動画説明</h2>
+        <details><summary>動画説明</summary>
+            {% for text in item.info.get("description","").split("\n") %}
+            {{text}}<br>
+            {% endfor %}
+        </details>
+        
+        <h2>詳細情報</h2>
+        <table><thead>
+            <tr><th>項目名</th><th>値</th></tr>
+        </thead>
+        <tbody>
+            <tr><th>元のURL</th><th><a href="{{output.info.webpage_url}}">{{output.info.webpage_url}}</a></th></tr>
+            <tr><th>タイトル</th><th>{{output.info.get("title") or "タイトル未取得"}}</th></tr>
+            <tr><th>作成者</th><th>{{output.info.get("uploader")}}</th></tr>
+            <tr><th>投稿日付</th><th>{{output.info.get("upload_date")}}</th></tr>
+            <tr><th>再生回数</th><th>{{output.info.get("view_count")}}</th></tr>
+            <tr><th>再生時間</th><th>{{output.info.get("duration_string")}}</th></tr>
+            <tr><th>ファイルサイズ</th><th>{{output.file_size or "不明"}} MB</th></tr>
+            <tr><th>解像度</th><th>{{output.info.width or "不明"}}x{{output.info.height or "不明"}}@{{output.info.fps or "不明"}}</th></tr>
+            <tr><th>動画コーデック/音声コーデック</th><th>{{output.info.vcodec or "不明"}} {{output.info.ext or "不明"}} / {{output.info.acodec or "不明"}}</th></tr>
+            <tr><th>YT-dlpフォーマット</th><th>{{output.ytdlp_format or output.info.get("format") or "不明"}}</th></tr>
+        </tbody></table>
+        <p>これらの情報はYT-dlpから自動的に返された情報であり、精度は保証しません。</p>
+        <p>ダウンロードされだ動画は一時的にサーバー上に保存されますが、手動/一定期間後に自動にて削除されることがあります。お早めにダウンロードください。</p>
+        {%endif%}
+    </main>
+    {% if output.status != "completed" and output.status != "dl_failure" and output.status != "deleted" %}
+    <script>
+    // 自動進捗更新用JS
+    (function() {
+        const finalStates = ["completed", "dl_failure", "deleted"];
+        const uuid = "{{ item.info.uuid if item.info.get('uuid') else request.view_args.get('uuid', '') }}";
+        if (!uuid) return;
+        let lastStatus = "{{ output.status }}";
+        let polling = true;
+        async function pollStatus() {
+            if (!polling) return;
+            try {
+                const res = await fetch(`/api/status/${uuid}`);
+                if (!res.ok) throw new Error("API error");
+                const data = await res.json();
+                if (data.status && data.status !== lastStatus) {
+                    lastStatus = data.status;
+                    location.reload();
+                    return;
+                }
+                if (data.status === "downloading") {
+                    document.getElementById("status-message").innerHTML = `ダウンロード中...（${data.downloaded_percent} ％完了）<br><small><a onclick=\"location.reload()\">ページをリロードして最新情報を取得</a></small>`;
+                } else if (data.status === "queue") {
+                    document.getElementById("status-message").innerHTML = `待機列...<br><small><a onclick=\"location.reload()\">ページをリロードして最新情報を取得</a></small>`;
+                }
+                if (finalStates.includes(data.status)) {
+                    polling = false;
+                    location.reload();
+                    return;
+                }
+            } catch (e) {
+                console.error(e);
+            }
+            setTimeout(pollStatus, 500);
+        }
+        pollStatus();
+    })();
+    </script>
+    {% endif %}
+</body>
+</html>

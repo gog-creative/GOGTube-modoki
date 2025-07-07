@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name=”robots” content=”noindex” >
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="{{url_for('static', filename='icons/512.png')}}" type="image/png">
+  <link rel="apple-touch-icon" href="{{url_for('static', filename='icons/512.png')}}" type="image/png">
+  <link rel="stylesheet" href="../../static/css/mvp.css"> 
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/mvp.css')}}"> 
+  <title>管理パネル | YouTubeもどきもどき</title>
+</head>
+<body>
+  <header>
+      <h1>YouTubeもどきもどき</h1>
+      <h2>管理画面</h2>
+      <a href="{{ url_for("index") }}">ホーム</a>
+      <a href="{{ url_for("admin_dashboard") }}">ダッシュボード</a>
+      <a href="{{ url_for("admin_settings") }}">設定</a>
+  </header>
+
+  <main>
+  {% block content %}
+    <!--メイン-->
+  {% endblock %}
+  </main>
+</body>
+</html>

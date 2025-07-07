@@ -1,0 +1,7 @@
+/venv
+/app/output/*
+app/__pycache__/
+/app/volume/
+/volume
+/node_modules/
+docker-compose.yml

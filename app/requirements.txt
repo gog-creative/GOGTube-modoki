@@ -1,0 +1,9 @@
+flask
+flask_httpauth
+flask_limiter
+bgutil-ytdlp-pot-provider
+gunicorn
+gevent
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
