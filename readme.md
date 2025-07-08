@@ -78,14 +78,16 @@ YouTubeの動画をダウンロードし、MP3などの形式に変換するた�
 | `STORAGE_LIMIT_SIZE` | ファイルを保存するストレージの上限サイズ (MB) | `3000` |
 | `STORAGE_AUTO_DELETE`| 上限到達時に古いファイルから自動削除するか | `True` |
 
-#### **Google OAuth 設定 (管理者ページ)**
+#### **Google OAuth 設定 (オプション)**
+Googleアカウントによるログイン機能を利用する場合に設定します。
+
 | 環境変数 | 説明 | デフォルト値 |
 | :--- | :--- | :--- |
 | `ADMIN_GOOGLE_OAUTH` | Google OAuth認証を有効にする | `False` |
-| `GOOGLE_OAUTH_CLIENT_ID` | **(必須)** Google Cloud発行のクライアントID | (なし) |
-| `GOOGLE_OAUTH_PROJECT_ID`| **(必須)** Google CloudのプロジェクトID | (なし) |
-| `GOOGLE_OAUTH_CLIENT_SECRET`| **(必須)** Google Cloud発行のクライアントシークレット | (なし) |
-| `GOOGLE_OAUTH_REDIRECT_URI`| Google Cloudで設定したリダイレクトURI | `https://yt.gog-lab.org/google-callback` |
+| `GOOGLE_OAUTH_CLIENT_ID` | `ADMIN_GOOGLE_OAUTH`を`True`にする場合、**必須**。Google Cloud発行のクライアントID | (なし) |
+| `GOOGLE_OAUTH_PROJECT_ID`| `ADMIN_GOOGLE_OAUTH`を`True`にする場合、**必須**。Google CloudのプロジェクトID | (なし) |
+| `GOOGLE_OAUTH_CLIENT_SECRET`| `ADMIN_GOOGLE_OAUTH`を`True`にする場合、**必須**。Google Cloud発行のクライアントシークレット | (なし) |
+| `GOOGLE_OAUTH_REDIRECT_URI`| `ADMIN_GOOGLE_OAUTH`を`True`にする場合、**必須**。Google Cloudで設定したリダイレクトURI | `https://yt.gog-lab.org/google-callback` |
 | `GOOGLE_OAUTH_AUTH_URI`| (上級者向け) 認証URI | `https://accounts.google.com/o/oauth2/auth` |
 | `GOOGLE_OAUTH_TOKEN_URI`| (上級者向け) トークンURI | `https://oauth2.googleapis.com/token` |
 

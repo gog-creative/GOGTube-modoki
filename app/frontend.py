@@ -75,21 +75,27 @@ class User():
 user_dic["anonymous"] = User("anonymous","-","Anonymous","")
 
 #Googleログイン
-google_secret = system.config.google_secret
-google_flow = Flow.from_client_config(
-    google_secret,
-    scopes=["openid", "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"],
-    redirect_uri = google_secret["web"]["redirect_uri"]
-    )
+if system.config.admin["google_oauth"] == True:
+    google_secret = system.config.google_secret
+    google_flow = Flow.from_client_config(
+        google_secret,
+        scopes=["openid", "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"],
+        redirect_uri = google_secret["web"]["redirect_uri"]
+        )
 
 @app.route('/login')
 def google_login():
+    if system.config.admin["google_oauth"] == False:
+        return redirect(url_for('index'))
     authorization_url, state = google_flow.authorization_url()
     session['state'] = state
     return render_template("login.html",link=authorization_url,site_name=system.SITE_NAME)
 
 @app.route('/google-callback')
 def google_callback():
+    if system.config.admin["google_oauth"] == False:
+        return redirect(url_for('index'))
+    
     google_flow.fetch_token(authorization_response = request.url)
 
     if not session['state'] == request.args['state']:
