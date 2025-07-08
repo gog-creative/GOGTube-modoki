@@ -99,8 +99,9 @@ def google_callback():
     credentials = google_flow.credentials
     request_session = google_requests.Request()
 
+    #credentials.id_tokenが動的属性のため型チェックを無視
     id_info = id_token.verify_oauth2_token(
-        credentials.id_token, request_session, google_secret["web"]["client_id"]
+        credentials.id_token, request_session, google_secret["web"]["client_id"] # type: ignore
     )
     user_dic[id_info.get("sub")] = User(
         id_info.get("sub"),
@@ -377,16 +378,17 @@ def admin_dashboard():
     max_index = (len(dic) + page_limit - 1) // page_limit
     
     page_index = int(get_args.get("page","1")) -1
+    # url_forで_external引数を指定しているのは、キーワード引数で意図せず指定してしまうのを防ぐため。
     if page_index < 0:
         page_index = 0
         args = get_args.copy()
-        args["page"] = str(1)
-        return redirect(url_for("admin_dashboard",**get_args))
+        args["page"] = "1"
+        return redirect(url_for("admin_dashboard", _external=None, **args))
     
     elif page_index > max_index:
         args = get_args.copy()
         args["page"] = str(max_index + 1)
-        return redirect(url_for("admin_dashboard",**args))
+        return redirect(url_for("admin_dashboard", _external=None, **args))
 
     dic = dic[page_index*page_limit : (page_index*page_limit) + page_limit]
 
@@ -435,7 +437,7 @@ def admin_command():
                 #URIパラメーターから削除
                 del args["command"]
                 del args["id"]
-                return redirect(url_for("admin_dashboard",**args))
+                return redirect(url_for("admin_dashboard", _external=None, **args))
             
             case "delete":
                 system.log("ファイルを削除します", id)
@@ -445,7 +447,7 @@ def admin_command():
                 #URIパラメーターから削除
                 del args["command"]
                 del args["id"]
-                return redirect(url_for("admin_dashboard",**args))
+                return redirect(url_for("admin_dashboard", _external=None, **args))
 
     #コマンドのみの場合
     if args.get("command"):
