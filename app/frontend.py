@@ -460,11 +460,6 @@ def admin_command():
                 return send_file("log.txt")
     return redirect(url_for("admin_dashboard"))
 
-@app.route("/admin/settings",methods=["GET","POST"])
-@auth.login_required
-def admin_settings():
-    return render_template("admin/settings.html",site_name=system.SITE_NAME)
-
 @app.route("/profile/<id>")
 @auth.login_required
 def admin_userpage(id:str):
