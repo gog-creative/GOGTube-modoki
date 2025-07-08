@@ -13,6 +13,7 @@ import core
 from os.path import basename,splitext
 from glob import glob
 from uuid import uuid4
+from os import environ
 #永続化DB
 import shelve
 
@@ -58,7 +59,7 @@ user_dic:dict[str, "User"] = {}
 
 #Googleユーザーのクラス
 class User():
-    def __init__(self, id, email:str="", name="", domain="", is_admin :bool = False):
+    def __init__(self, id, email:str=None, name=None, domain=None, is_admin :bool = False):
         self.id = id
         self.email: str = email
         self.name = name
@@ -69,14 +70,25 @@ class User():
         return value.id == self.id
     
     def __str__(self):
-        return f"EMAIL:{self.email},NAME:{self.name},ID:{self.id}"
+        return f"{self.name or self.email or self.id}"
 
 #匿名ユーザーを追加
 user_dic["anonymous"] = User("anonymous","-","Anonymous","")
 
 #Googleログイン
 if system.config.admin["google_oauth"] == True:
-    google_secret = system.config.google_secret
+    google_secret = {
+                "web":{
+                    "client_id":    environ.get("GOOGLE_OAUTH_CLIENT_ID",   ""),
+                    "project_id":   environ.get("GOOGLE_OAUTH_PROJECT_ID",  ""),
+                    "auth_uri":     environ.get("GOOGLE_OAUTH_AUTH_URI",    "https://accounts.google.com/o/oauth2/auth"),
+                    "token_uri":    environ.get("GOOGLE_OAUTH_TOKEN_URI",   "https://oauth2.googleapis.com/token"),
+                    "auth_provider_x509_cert_url":
+                                    environ.get("GOOGLE_OAUTH_AUTH_PROVIDER_x509_CERT_URL","https://www.googleapis.com/oauth2/v1/certs"),
+                    "client_secret":environ.get("GOOGLE_OAUTH_CLIENT_SECRET",""),
+                    "redirect_uri": environ.get("GOOGLE_OAUTH_REDIRECT_URI","https://yt.gog-lab.org/google-callback")
+                }
+            }
     google_flow = Flow.from_client_config(
         google_secret,
         scopes=["openid", "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"],
