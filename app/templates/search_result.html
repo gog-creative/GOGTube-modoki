@@ -8,13 +8,13 @@
     <link rel="apple-touch-icon" href="{{url_for('static', filename='icons/512.png')}}" type="image/png">
     <link rel="stylesheet" href="../static/css/tailwind.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css')}}"> 
-    <title>検索結果「{{ query }}」 | GOGTubeもどき</title>
+    <title>検索結果「{{ query }}」 | {{ site_name }}</title>
 </head>
 <body class="bg-gradient-to-r from-blue-950 to-purple-900">
     <header class="bg-white flex flex-col justify-between p-4 mx:px-16 shadow">
         <div class="mx-4 flex flex-col sm:flex-row justify-between items-center">
             <div class="flex flex-col">
-                <h1>GOGTubeもどき</h1>
+                <h1>{{ site_name }}</h1>
                 <small>YouTubeMP3もどきのアイデアをもとに自作した動画ダウンローダーです。</small>
             </div>
             <nav class="flex my-1">

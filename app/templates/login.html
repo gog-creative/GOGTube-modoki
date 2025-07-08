@@ -8,20 +8,20 @@
     <link rel="apple-touch-icon" href="{{url_for('static', filename='icons/512.png')}}" type="image/png">
     <link rel="stylesheet" href="../static/css/mvp.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mvp.css')}}"> 
-    <title>ログイン | GOGTubeもどき</title>
+    <title>ログイン | {{ site_name }}</title>
 </head>
 <body>
     <header>
         <header>
-            <h1>GOGTubeもどき<br><small>Pythonラボ</small><br></h1>
-            <small>YoutubeMP3もどきをパクった動画ダウンロードサイト、「GOGTubeもどき」です。</small><br>
+            <h1>{{ site_name }}<br><small>Pythonラボ</small><br></h1>
+            <small>YoutubeMP3もどきをパクった動画ダウンロードサイト、「{{ site_name }}」です。</small><br>
             <a href="/">ホーム</a>
             <a href="/status">ダウンロード状況</a>
         </header>
     </header>
     <main>
         <h1>Googleログイン</h1>
-        <p>YTもどきもどきを利用するには、ログインする必要があります。アカウントは組織のものでも可能です。</p>
+        <p>{{ site_name }}を利用するには、ログインする必要があります。アカウントは組織のものでも可能です。</p>
         <a href="{{link}}"><button>ログインする</button></a>
     </main>
 </body>

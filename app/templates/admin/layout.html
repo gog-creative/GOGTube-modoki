@@ -9,11 +9,11 @@
   <link rel="apple-touch-icon" href="{{url_for('static', filename='icons/512.png')}}" type="image/png">
   <link rel="stylesheet" href="../../static/css/mvp.css"> 
   <link rel="stylesheet" href="{{ url_for('static', filename='css/mvp.css')}}"> 
-  <title>管理パネル | YouTubeもどきもどき</title>
+  <title>管理パネル | {{ site_name }}</title>
 </head>
 <body>
   <header>
-      <h1>YouTubeもどきもどき</h1>
+      <h1>{{ site_name }}</h1>
       <h2>管理画面</h2>
       <a href="{{ url_for("index") }}">ホーム</a>
       <a href="{{ url_for("admin_dashboard") }}">ダッシュボード</a>
