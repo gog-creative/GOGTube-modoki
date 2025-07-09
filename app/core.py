@@ -30,7 +30,7 @@ import yt_dlp.version
 
 class yt_modoki2:
     SITE_NAME = "GOGTubeもどき"
-    VERSION = "Release 4.0.0 build-20250708"
+    VERSION = "Release 4.0.1 build-20250709"
     
     #設定保管オブジェクト
     class settings:
@@ -288,7 +288,7 @@ class yt_modoki2:
                 
                 #フォーマットを保存
                 self.item.ytdlp_format = ytdlp_option["format"]
-                print(self.item.info["ytdlp_format"])
+                print(self.item.ytdlp_format)
                 # ダウンロード
                 self._core.log(f"ダウンロードを開始\nフォーマット：{ytdlp_option["format"]}",self.id)
                 self.item.time["start_download"] = datetime.datetime.now()

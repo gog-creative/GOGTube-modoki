@@ -131,8 +131,16 @@ def google_callback():
     session["id"] = id_info.get("sub")
     return redirect(url_for('index'))
 
-def int_f(n:int):
-    return f"{n:,}"
+
+def int_f(n):
+    if n == None:
+        return "不明"
+    try:
+        n = int(n)
+        return f"{n:,}"
+    except (TypeError, ValueError):
+        return "0"
+
 app.jinja_env.filters["int_f"] = int_f
 app.jinja_env.globals["site_name"] = system.SITE_NAME
 
@@ -292,9 +300,8 @@ def status(uuid):
     output["url"] = f"/download/{uuid}"
     return render_template("status.html",
                            output=output,
-                           item=item,
-                           
-                        ),status_code
+                           item=item
+                           ),status_code
 
 @app.route("/api/status/<uuid>")
 def status_api(uuid):

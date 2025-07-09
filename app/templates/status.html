@@ -69,9 +69,9 @@
             <tr><th>タイトル</th><th>{{output.info.get("title") or "タイトル未取得"}}</th></tr>
             <tr><th>作成者</th><th>{{output.info.get("uploader")}}</th></tr>
             <tr><th>投稿日付</th><th>{{output.info.get("upload_date")}}</th></tr>
-            <tr><th>再生回数</th><th>{{output.info.get("view_count", 0) | int_f}}</th></tr>
+            <tr><th>再生回数</th><th>{{output.info.get("view_count", 0) | int_f}} 回</th></tr>
             <tr><th>再生時間</th><th>{{output.info.get("duration_string")}}</th></tr>
-            <tr><th>ファイルサイズ</th><th>{{output.file_size or "不明"}} MB</th></tr>
+            <tr><th>ファイルサイズ</th><th>{{item.file_size or "不明"}} MB</th></tr>
             <tr><th>解像度</th><th>{{output.info.width or "不明"}}x{{output.info.height or "不明"}}@{{output.info.fps or "不明"}}</th></tr>
             <tr><th>動画コーデック/音声コーデック</th><th>{{output.info.vcodec or "不明"}} {{output.info.ext or "不明"}} / {{output.info.acodec or "不明"}}</th></tr>
             <tr><th>YT-dlpフォーマット</th><th>{{output.ytdlp_format or output.info.get("format") or "不明"}}</th></tr>

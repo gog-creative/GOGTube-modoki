@@ -28,12 +28,12 @@
             <button class="inline-block px-3 md:text-xl rounded text-white bg-red-500 hover:bg-white hover:border hover:text-red-600 border-e-red-600" type="submit">検索</button>
         </form>
     </header>
-    <main class="m-4">
+    <main class="m-4 md:mx-6">
         <h1 class="text-white text-2xl font-bold">「{{ query }}」の検索結果</h1>
         
-        <div class="grid sm:grid-cols-2 md:grid-cols-3 my-2 gap-3">
+        <div class="grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 my-2 gap-3">
         {% for video in entries %}
-        <form class="bg-white shadow rounded-lg" action="/request" method="POST">
+        <form class="bg-white shadow rounded-lg hover:ring-2 ring-blue-600 active:ring-amber-600" action="/request" method="POST">
             <input type="hidden" name="link" value="{{ video.url }}">
             <input type="hidden" name="file_type" value="video">
             <input type="hidden" name="play_directly" value="on">
@@ -41,9 +41,9 @@
             <input type="hidden" name="audio_codec" value="">
             
             <button class="w-full flex flex-col mb-4 gap-2 text-left" type="submit">
-                <a href="{{ video.url }}" class="shrink-0 aspect-16/9">
-                    <img class="rounded-t-lg w-full object-cover" src="{{ video['thumbnails'][-1]['url']  }}">
-                </a>
+                <div class="shrink-0 aspect-16/9 bg-gray-300 rounded-t-lg">
+                    <img alt="動画サムネイル画像がここにあるはず" class="w-full rounded-t-lg object-cover" src="{{ video['thumbnails'][-1]['url']  }}">
+                </div>
                 <div class="px-4">
                     <h2 class="font-bold left-0 line-clamp-2 text-xl">{{ video.title }}</h2>
                     <p class="text-xs">{{ video.uploader }} / {{ video.view_count | int_f }} 回再生 <a class="underline text-blue-600" href="{{ video.url  }}">元リンク</a></p>
