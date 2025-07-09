@@ -71,6 +71,9 @@ YouTubeの動画をダウンロードし、MP3などの形式に変換するた�
 | `DOWNLOAD_BIND_IP` | ダウンロード時に使用するIPアドレス | `0.0.0.0` |
 | `DOWNLOAD_THREADS` | 同時ダウンロード数 | `2` |
 | `ADMIN_NEW_REQUEST`| 新しいダウンロードリクエストを許可するか | `True` |
+| `POT_PROVIDER`| PO Tokenプロバイダのコンテナへのアドレス| `http://ytmp3modoki2-bgutil-provider-1:4416`|
+
+※ POトークン：YT-dlpがBot判定を回避するためのトークン。bgutil-providerコンテナを使用している。
 
 #### **ストレージ設定**
 | 環境変数 | 説明 | デフォルト値 |

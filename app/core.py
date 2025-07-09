@@ -46,7 +46,8 @@ class yt_modoki2:
                 "DOWNLOAD":{
                     "bind_ip":environ.get("DOWNLOAD_BIND_IP","0.0.0.0"),
                     "threads":int(environ.get("DOWNLOAD_THREADS","2")),
-                    "new_request":bool(environ.get("ADMIN_NEW_REQUEST","True"))
+                    "new_request":bool(environ.get("ADMIN_NEW_REQUEST","True")),
+                    "pot_provider":environ.get("POT_PROVIDER","http://ytmp3modoki2-bgutil-provider-1:4416")
                 },
                 "STORAGE":{
                     "time_format":"%Y/%m/%d %H:%M:%S",
@@ -212,9 +213,24 @@ class yt_modoki2:
                     self.item.status = "downloading"
                     try:
                         if self.item.is_video:
-                            self.item.info = YoutubeDL({"format":"best","noplaylist":True}).extract_info(self.item.url, False) or {}
+                            self.item.info = YoutubeDL(
+                                {
+                                    "format":"best",
+                                    "extractor_args": {
+                                        "youtubepot-bgutilhttp": {"base_url":self._core.config.download["pot_provider"]}
+                                    },
+                                    "noplaylist":True
+                                    }
+                                ).extract_info(self.item.url, False) or {}
                         else:
-                            self.item.info = YoutubeDL({"format":"ba[ext='m4a']/ba[acodec='mp3']/ba","noplaylist":True}).extract_info(self.item.url, False) or {}
+                            self.item.info = YoutubeDL(
+                                {
+                                    "format":"ba[ext='m4a']/ba[acodec='mp3']/ba",
+                                    "noplaylist":True,
+                                    "extractor_args": {
+                                        "youtubepot-bgutilhttp": {"base_url":self._core.config.download["pot_provider"]}
+                                    },
+                                }).extract_info(self.item.url, False) or {}
                     except Exception:
                         self.item.status = "dl_failure"
                         continue
@@ -256,7 +272,7 @@ class yt_modoki2:
                     "source_address":self._core.config.download["bind_ip"],
                     #POトークン発行
                     "extractor_args": {
-                        "youtubepot-bgutilhttp": ["base_url=http://ytmp3modoki2-bgutil-provider-1:4416"]
+                        "youtubepot-bgutilhttp": {"base_url":self._core.config.download["pot_provider"]}
                     },
                     #"throttled_rate":"50K",
                     #"retries":"3",

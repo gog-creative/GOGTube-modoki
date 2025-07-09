@@ -59,9 +59,9 @@ user_dic:dict[str, "User"] = {}
 
 #Googleユーザーのクラス
 class User():
-    def __init__(self, id, email:str=None, name=None, domain=None, is_admin :bool = False):
+    def __init__(self, id, email=None, name=None, domain=None, is_admin :bool = False):
         self.id = id
-        self.email: str = email
+        self.email = email
         self.name = name
         self.domain = domain
         self.is_admin = is_admin

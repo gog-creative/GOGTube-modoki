@@ -1,4 +1,4 @@
-FROM python:3-alpine AS builder
+FROM python:3.12-alpine AS builder
 
 WORKDIR /app
 
@@ -9,7 +9,7 @@ COPY requirements.txt /app/
 COPY templates/ /app/templates
 COPY static/ /app/static
 
-FROM python:3-alpine AS dev
+FROM python:3.12-alpine AS dev
 WORKDIR /app
 
 COPY --from=builder /app /app
