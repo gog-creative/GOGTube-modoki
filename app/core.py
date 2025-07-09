@@ -79,26 +79,12 @@ class yt_modoki2:
             self.audio_codec:str = audio_codec      #音声コーデック
             self.video_codec:str = video_codec      #動画コーデック
             self.downloader :Optional[int] = None   #ダウンローダーID
-            self.user:str = user                    #
-            self.ytdlp_format:Optional[str] = None  #
-            self.direct_url:Optional[str] = None   #直接再生するURL
+            self.user:Any = user                    #ユーザー識別
+            self.ytdlp_format:Optional[str] = None  #YT-dlpに渡すフォーマットの絞り込み
+            self.direct_url:Optional[str] = None    #直接再生するURL
             
             #動画の情報
-            self.info:dict[str,Any] = {
-                "webpage_url":"不明",
-                "title":"タイトル未取得",
-                "description":"概要欄未取得",
-                "uploader":"不明",
-                "upload_date":"不明",
-                "view_count":"不明",
-                "duration_string":"不明",
-                "width":"不明",
-                "height":"不明",
-                "fps":"不明",
-                "vcodec":"不明",
-                "ext":"不明",
-                "ytdlp_format":"Null"
-            }
+            self.info:dict[str,Any] = {}
 
             #時間情報
             self.time = {
@@ -109,17 +95,6 @@ class yt_modoki2:
                 "min_save_period":save_period, #最低限保存する時間（分）
                 "save_period":None  #保存する期限時刻（datatime）w
             }
-
-        #ダウンロード完了時の処理
-        def __downloaded__(self):
-            #サイズ、時刻等の設定
-            self.file_size = round(getsize(glob(f"outputs/{self.uuid}/output.*")[0])/1024**2,2)
-            self.time["save_period"] = (datetime.datetime.now() + datetime.timedelta(minutes=self.time["min_save_period"]))
-
-            #完了
-            self._core.log("処理が完了しました",str(self.uuid))
-            self.time["finish"] = datetime.datetime.now()
-            self.status = "completed"
 
         #動画ファイルを削除する関数
         def delete(self,by:str= "") -> None:
@@ -180,6 +155,12 @@ class yt_modoki2:
             self._core.queue_list.remove(self.uuid)
             self._core.queue_list.append(self.uuid)
             self._core.log("リクエストをキューの末尾に移動しました",self.uuid)
+        
+        def __str__(self):
+            text = f"[{self.user}]によるリクエスト {self.uuid}:\n"+\
+            f"    URL:{self.url}"
+            f"    日時:{self.time["request"]}"
+            return text
     
     #ダウンロードスレッドのオブジェクト
     class downloader:
@@ -213,9 +194,10 @@ class yt_modoki2:
                     self.item.status = "downloading"
                     try:
                         if self.item.is_video:
+                            self.item.ytdlp_format="best"
                             self.item.info = YoutubeDL(
                                 {
-                                    "format":"best",
+                                    "format":self.item.ytdlp_format,
                                     "extractor_args": {
                                         "youtubepot-bgutilhttp": {"base_url":self._core.config.download["pot_provider"]}
                                     },
@@ -223,9 +205,10 @@ class yt_modoki2:
                                     }
                                 ).extract_info(self.item.url, False) or {}
                         else:
+                            self.item.ytdlp_format = "ba[ext='m4a']/ba[acodec='mp3']/ba"
                             self.item.info = YoutubeDL(
                                 {
-                                    "format":"ba[ext='m4a']/ba[acodec='mp3']/ba",
+                                    "format":self.item.ytdlp_format,
                                     "noplaylist":True,
                                     "extractor_args": {
                                         "youtubepot-bgutilhttp": {"base_url":self._core.config.download["pot_provider"]}
@@ -326,7 +309,14 @@ class yt_modoki2:
                     self.item.info["upload_date"] = datetime.datetime.strptime(self.item.info.get("upload_date","20000101"),"%Y%m%d")
 
                 #ダウンロード完了
-                self.item.__downloaded__()
+                            #サイズ、時刻等の設定
+                self.item.file_size = round(getsize(glob(f"outputs/{self.item.uuid}/output.*")[0])/1024**2,2)
+                self.item.time["save_period"] = (datetime.datetime.now() + datetime.timedelta(minutes=self.item.time["min_save_period"]))
+
+                #完了
+                self.item._core.log("処理が完了しました",str(self.item.uuid))
+                self.item.time["finish"] = datetime.datetime.now()
+                self.item.status = "completed"
 
         #YT-dlpの進捗フック
         def progress_hook(self, d:dict) -> None:
@@ -337,7 +327,7 @@ class yt_modoki2:
     def __init__(self):
         print(f"YT-modoki2 {__name__}を起動します",flush=True)
         print(f"yt-dlp version: {yt_dlp.version.__version__}",flush=True)
-        #動画の辞書（UUID:self.video_item）
+        #リクエストデータ（UUID:self.video_item）
         self.video_dic: dict[str, yt_modoki2.video_item] = {}
         #ダウンロードキュー
         self.queue_list: list[str] = []
@@ -357,8 +347,10 @@ class yt_modoki2:
         threading.Thread(target=self._auto_delete).start()
         
         #outputsフォルダ内を削除
-        try: rmtree("outputs") 
-        except: pass
+        try:
+            rmtree("outputs") 
+        except:
+            pass
         mkdir("outputs")
         
 
@@ -416,7 +408,7 @@ class yt_modoki2:
         return self._uuid, False
     
     def yt_search(self, query:str) -> list[dict]:
-        info = YoutubeDL().extract_info(f"ytsearch19:{query}",download=False,process=False) or {"entries":[]}
+        info = YoutubeDL().extract_info(f"ytsearch38:{query}",download=False,process=False) or {"entries":[]}
         return list(info["entries"])
 
     #動画ファイルの合計サイズを計算
@@ -474,7 +466,7 @@ class yt_modoki2:
             print(message)
 
         #ログ保存
-        with open("log.txt",mode="a+",encoding="utf-8") as l:
+        with open("log.txt", mode="a+", encoding="utf-8") as l:
             message = f"{time} [{level}] [{uuid}] {text}"
             l.write("\n"+message)
 

@@ -101,7 +101,7 @@ def google_login():
         return redirect(url_for('index'))
     authorization_url, state = google_flow.authorization_url()
     session['state'] = state
-    return render_template("login.html",link=authorization_url,site_name=system.SITE_NAME)
+    return render_template("login.html",link=authorization_url)
 
 @app.route('/google-callback')
 def google_callback():
@@ -131,6 +131,11 @@ def google_callback():
     session["id"] = id_info.get("sub")
     return redirect(url_for('index'))
 
+def int_f(n:int):
+    return f"{n:,}"
+app.jinja_env.filters["int_f"] = int_f
+app.jinja_env.globals["site_name"] = system.SITE_NAME
+
 #メインページ
 @app.route("/")
 def index():
@@ -139,7 +144,6 @@ def index():
     return render_template(
         "index.html",
         output=output,
-        site_name=system.SITE_NAME,
         user_dic=user_dic,
         launch_total = len(system.video_dic.items()),
         total_download = get_dlcount(),
@@ -162,7 +166,7 @@ def youtube_search():
     return render_template("search_result.html",
                            query=query,
                            entries=entries,
-                           site_name=system.SITE_NAME
+                           
                            )
 
 #ダウンロードのPOST受付
@@ -185,14 +189,12 @@ def download_request():
 
     if system.config.download["new_request"] == False:
         return render_template("error.html",
-                               output = {"error":"只今新しいリクエストを受け付けておりません。"},
-                               site_name=system.SITE_NAME
-                               ),403
+                               output = {"error":"只今新しいリクエストを受け付けておりません。"}),403
     
     #POST以外はエラー
     if request.method != "POST":
         output["error"] = "送信メゾットはPOSTである必要があります"
-        return render_template("error.html", output=output, site_name=system.SITE_NAME,), 502
+        return render_template("error.html", output=output), 502
 
     #パラメーター取得
     type = request.form.get("type","url")
@@ -214,7 +216,7 @@ def download_request():
     #動画か音声かを確認
     if file_type != "video" and file_type != "audio":
         output["error"] = "動画または音声を選択してください"
-        return render_template("error.html",output=output,site_name=system.SITE_NAME),502
+        return render_template("error.html", output=output),502
     elif file_type == "video":
         is_video = True
     else:
@@ -231,10 +233,10 @@ def download_request():
 @app.route("/status",methods=["GET"])
 def cookie_status():
     output = {}
-    uuid = session.get("video_uuid",None)
+    uuid = session.get("video_uuid", None)
     if not uuid:
         output["error"] = "IDが指定されていません\n先に動画をダウンロードしてください。"
-        return render_template("error.html",output = output, site_name=system.SITE_NAME)
+        return render_template("error.html",output = output)
     return redirect(url_for("status",uuid = uuid))
 
 #ステータスのページ
@@ -247,9 +249,7 @@ def status(uuid):
         item = system.video_dic[uuid]
     except:
         output["error"] = "そのIDは存在しません"
-        return render_template("error.html",
-                               output = output,
-                               site_name=system.SITE_NAME),404
+        return render_template("error.html", output = output,),404
     #渡すデータを準備
     if item.status == "downloading":
         try:
@@ -290,7 +290,11 @@ def status(uuid):
             status_code = 404
     #動画情報の設定
     output["url"] = f"/download/{uuid}"
-    return render_template("status.html",output=output,item=item,site_name=system.SITE_NAME),status_code
+    return render_template("status.html",
+                           output=output,
+                           item=item,
+                           
+                        ),status_code
 
 @app.route("/api/status/<uuid>")
 def status_api(uuid):
@@ -299,7 +303,12 @@ def status_api(uuid):
         item = system.video_dic[uuid]
     except:
         return {"error":"そのIDは存在しません"},404
-    return {"status":item.status,"downloaded_percent":item.downloaded_percent}
+    return {
+        "status":item.status,
+        "downloaded_percent":item.downloaded_percent,
+        "waiting_list_index":system.queue_list.index(uuid) if item.status == "queue" else None,
+        "waiting_list_size":len(system.queue_list)
+    }
 
 #動画ダウンロード
 @app.route("/download/<id>")
@@ -309,21 +318,21 @@ def download(id):
         item = system.video_dic[id]
     except:
         output["error"] = "そのIDは存在しません"
-        return render_template("error.html",output=output,site_name=system.SITE_NAME,),404
+        return render_template("error.html",output=output),404
         
     match item.status:
         case "queue":
             output["error"] = "このファイルはまだダウンロードされていません"
-            return render_template("error.html",output=output,site_name=system.SITE_NAME),404
+            return render_template("error.html",output=output),404
         case "downloading":
             output["error"] = "このファイルはダウンロード中です"
-            return render_template("error.html",output=output,site_name=system.SITE_NAME),404
+            return render_template("error.html",output=output),404
         case "dl_failure":
             output["error"] = "ファイルのダウンロードに失敗しました"
-            return render_template("error.html",output=output,site_name=system.SITE_NAME),500
+            return render_template("error.html",output=output),500
         case "deleted":
             output["error"] = "このファイルは削除されました"
-            return render_template("error.html",output=output,site_name=system.SITE_NAME),404
+            return render_template("error.html",output=output),404
         
     title = item.info["title"]
     file_name = basename(glob(f"outputs/{id}/output.*")[0])
@@ -332,7 +341,7 @@ def download(id):
     try:
         return send_file(file_path,download_name=f"{title}{ext}",as_attachment=True)
     except FileNotFoundError:
-        return render_template("error.html",output={"error":"そのファイルは存在しません"},site_name=system.SITE_NAME)
+        return render_template("error.html",output={"error":"そのファイルは存在しません"})
 
 
 @auth.get_password
@@ -432,7 +441,6 @@ def admin_dashboard():
         status = status,
         page = page,
         add_query_url_for = add_query_url_for,
-        site_name=system.SITE_NAME
         )
 
 @app.route("/admin/command",methods=["GET"])
@@ -448,7 +456,7 @@ def admin_command():
                 try:
                     return send_file(f"outputs/{id}/log.txt")
                 except FileNotFoundError:
-                    return render_template("error.html",output={"error":"そのログは見つかりません"},site_name=system.SITE_NAME), 404
+                    return render_template("error.html",output={"error":"そのログは見つかりません"}), 404
             case "priority":
                 system.log("リクエストを優先に設定します",id)
                 system.queue_list.insert(0, system.queue_list.pop(system.queue_list.index(id)))    
@@ -461,7 +469,7 @@ def admin_command():
                 system.log("ファイルを削除します", id)
                 try:system.video_dic[id].delete()
                 except Exception as e:
-                    return render_template("error.html",output={"error":e},site_name=system.SITE_NAME),500
+                    return render_template("error.html",output={"error":e}),500
                 #URIパラメーターから削除
                 del args["command"]
                 del args["id"]
@@ -495,7 +503,7 @@ def admin_userpage(id:str):
         user=user,
         dic=user_video_list,
         config = system.config,
-        site_name=system.SITE_NAME
+        
         )
 
 #エラーページ
@@ -503,29 +511,29 @@ def admin_userpage(id:str):
 @app.errorhandler(502)
 def server_error(error):
     system.log(error,level="ERROR")
-    return render_template("error.html",output={"error":"サーバーでの処理中にエラーが発生しました。"},site_name=system.SITE_NAME),500
+    return render_template("error.html",output={"error":"サーバーでの処理中にエラーが発生しました。"}),500
 
 #Bad Request
 @app.errorhandler(400)
 def bad_request(error):
     system.log(error,level="ERROR")
-    return render_template("error.html",output={"error":"送信されたデータ形式が間違っています。"},site_name=system.SITE_NAME),400
+    return render_template("error.html",output={"error":"送信されたデータ形式が間違っています。"}),400
 
 #Unauthorized
 @app.errorhandler(401)
 def unauthorized(error):
     system.log(error,level="ERROR")
-    return render_template("error.html",output={"error":"このページにアクセスする権限がありません。"},site_name=system.SITE_NAME),401
+    return render_template("error.html",output={"error":"このページにアクセスする権限がありません。"}),401
 
 #Not Found
 @app.errorhandler(404)
 def not_found(error):
-    return render_template("error.html",output={"error":"そのページは見つかりませんでした。"},site_name=system.SITE_NAME),404
+    return render_template("error.html",output={"error":"そのページは見つかりませんでした。"}),404
 
 #Too Many Requests
 @app.errorhandler(429)
 def many_requests(error):
-    return render_template("error.html",output={"error":"要求されたリクエストが多すぎます。しばらく経過後、再度お試しください。"},site_name=system.SITE_NAME),429
+    return render_template("error.html",output={"error":"要求されたリクエストが多すぎます。しばらく経過後、再度お試しください。"}),429
 
 #template内でクエリを追加するurl_forを使うための関数
 def add_query_url_for(endpoint,dic,**kwarg):

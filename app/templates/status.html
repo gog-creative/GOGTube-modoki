@@ -69,7 +69,7 @@
             <tr><th>タイトル</th><th>{{output.info.get("title") or "タイトル未取得"}}</th></tr>
             <tr><th>作成者</th><th>{{output.info.get("uploader")}}</th></tr>
             <tr><th>投稿日付</th><th>{{output.info.get("upload_date")}}</th></tr>
-            <tr><th>再生回数</th><th>{{output.info.get("view_count")}}</th></tr>
+            <tr><th>再生回数</th><th>{{output.info.get("view_count", 0) | int_f}}</th></tr>
             <tr><th>再生時間</th><th>{{output.info.get("duration_string")}}</th></tr>
             <tr><th>ファイルサイズ</th><th>{{output.file_size or "不明"}} MB</th></tr>
             <tr><th>解像度</th><th>{{output.info.width or "不明"}}x{{output.info.height or "不明"}}@{{output.info.fps or "不明"}}</th></tr>
@@ -103,7 +103,11 @@
                 if (data.status === "downloading") {
                     document.getElementById("status-message").innerHTML = `ダウンロード中...（${data.downloaded_percent} ％完了）<br><small><a onclick=\"location.reload()\">ページをリロードして最新情報を取得</a></small>`;
                 } else if (data.status === "queue") {
-                    document.getElementById("status-message").innerHTML = `待機列...<br><small><a onclick=\"location.reload()\">ページをリロードして最新情報を取得</a></small>`;
+                    let queueMsg = "待機列...";
+                    if (typeof data.waiting_list_index === "number" && typeof data.waiting_list_size === "number") {
+                        queueMsg += `（${data.waiting_list_size}人中${data.waiting_list_index + 1}番目）`;
+                    }
+                    document.getElementById("status-message").innerHTML = `${queueMsg}<br><small><a onclick=\"location.reload()\">ページをリロードして最新情報を取得</a></small>`;
                 }
                 if (finalStates.includes(data.status)) {
                     polling = false;
