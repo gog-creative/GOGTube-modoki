@@ -33,4 +33,5 @@ RUN python -m pip install -r /app/requirements.txt\
     && apk update\
     && apk add ffmpeg
 
+EXPOSE 80
 CMD ["python", "server.py"]

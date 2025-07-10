@@ -40,13 +40,13 @@ class yt_modoki2:
                 "ADMIN":{
                     "login":str(environ.get("ADMIN_LOGIN","admin")),
                     "password":str(environ.get("ADMIN_PASSWORD","password")),
-                    "google_oauth":bool(environ.get("ADMIN_GOOGLE_OAUTH", None)),
-                    "debug":bool(environ.get("ADMIN_DEBUG",None))
+                    "google_oauth":environ.get("ADMIN_GOOGLE_OAUTH", "").lower() == "true",
+                    "debug":environ.get("ADMIN_DEBUG","").lower() == "true"
                 },
                 "DOWNLOAD":{
                     "bind_ip":environ.get("DOWNLOAD_BIND_IP","0.0.0.0"),
                     "threads":int(environ.get("DOWNLOAD_THREADS","2")),
-                    "new_request":bool(environ.get("ADMIN_NEW_REQUEST","True")),
+                    "new_request":environ.get("ADMIN_NEW_REQUEST","").lower() == "true",
                     "pot_provider":environ.get("POT_PROVIDER","http://ytmp3modoki2-bgutil-provider-1:4416")
                 },
                 "STORAGE":{
