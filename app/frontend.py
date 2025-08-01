@@ -346,7 +346,10 @@ def download(id):
     file_path = f"outputs/{id}/{file_name}"
     ext = splitext(file_path)[1]
     try:
-        return send_file(file_path,download_name=f"{title}{ext}",as_attachment=True)
+        return send_file(file_path,
+                         max_age=60**2*12,
+                         download_name=f"{title}{ext}",
+                         as_attachment=True)
     except FileNotFoundError:
         return render_template("error.html",output={"error":"そのファイルは存在しません"})
 

@@ -40,11 +40,8 @@ YouTubeの動画をダウンロードし、MP3などの形式に変換するた�
     cd ytmp3modoki2
     ```
 
-2.  **`docker-compose.yml`を作成します:**
-    `docker-compose.example.yml` を `docker-compose.yml` にコピーし、必要に応じて環境変数を編集してください。
-    ```bash
-    cp docker-compose.example.yml docker-compose.yml
-    ```
+2.  **`.env`を作成します:**
+    `example.env` を `.env` に名前を変更し、必要に応じて環境変数を編集してください。
 
 3.  **アプリケーションをビルドして実行します:**
     ```bash

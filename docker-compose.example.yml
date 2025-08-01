@@ -3,12 +3,7 @@ services:
         build:
             context: ./app/
             dockerfile: Dockerfile
-        environment:
-          GOOGLE_OAUTH_CLIENT_ID: CLIENT_ID_HERE
-          GOOGLE_OAUTH_CLIENT_SECRET: CLIENT_SECRET_HERE
-          GOOGLE_OAUTH_REDIRECT_URI: https://yt.gog-lab.org/google-callback
-          OAUTHLIB_INSECURE_TRANSPORT: 1
-          POT_PROVIDER: http://ytmp3modoki2-bgutil-provider-1:4416
+        env_file: .env
         ports:
           - 80:80
         volumes:

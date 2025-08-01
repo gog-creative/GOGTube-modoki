@@ -77,7 +77,7 @@
             <tr><th>YT-dlpフォーマット</th><th>{{output.ytdlp_format or output.info.get("format") or "不明"}}</th></tr>
         </tbody></table>
         <p>これらの情報はYT-dlpから自動的に返された情報であり、精度は保証しません。</p>
-        <p>ダウンロードされだ動画は一時的にサーバー上に保存されますが、手動/一定期間後に自動にて削除されることがあります。お早めにダウンロードください。</p>
+        <p>ダウンロードされた動画は一時的にサーバー上に保存されますが、手動/一定期間後に自動にて削除されることがあります。お早めにダウンロードください。</p>
         {%endif%}
     </main>
     {% if output.status != "completed" and output.status != "dl_failure" and output.status != "deleted" %}
