@@ -43,7 +43,7 @@
             <button class="inline-block px-3 md:text-xl rounded text-white bg-red-500 hover:bg-white hover:border hover:text-red-600 border-e-red-600" type="submit">検索</button>
         </form>
     </header>
-    <main class="mx-8 my-8 md:mx-16">
+    <main class="mx-6 my-8 md:mx-16">
         {% if (session.get("google_id") in user_dic) or config.admin["google_oauth"] == False: %}
         <form class="bg-gray-100 py-2 px-4 rounded" method="POST" action="/request" id="urlForm">
             <div class="my-4">
@@ -182,7 +182,7 @@
         </section>
     </main>
     <footer class="bg-white p-3 px-4">
-        GOGTubeもどき {{ version }} ログイン：{{session.get("google_id") in user_dic}}<br>
+        GOGTubeもどき {{ version }}（yt-dlp version: {{ ytdlp_version }}）<!--ログイン：{{session.get("google_id") in user_dic}}--><br>
         コンテナ起動：{{ start_time }} から <b class="font-digital text-xl px-1 py-0.5 bg-gray-800 text-white">{{ launch_total }}</b> 本<br>
         合計で<b class="font-digital text-xl px-1 py-0.5 bg-gray-800 text-white">{{ total_download }} </b>本の動画/音声がダウンロードされました。
     </footer>

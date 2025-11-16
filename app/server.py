@@ -2,7 +2,7 @@ import subprocess
 from time import sleep
 from os import environ
 
-command = "python3 -m gunicorn -b 0.0.0.0:80 --workers 3 --threads 2 -k gevent frontend:app"
+command = "python3 -m gunicorn -b 0.0.0.0:80 --workers 1 --threads 4 -k gevent frontend:app"
 if environ.get("ADMIN_DEBUG","").lower() == "true":
     print("!!! DEBUG MODE IS ENABLED !!!", flush=True)
     command+=" --log-level debug --error-logfile=- --access-logfile=- --capture-output"

@@ -30,7 +30,7 @@ import yt_dlp.version
 
 class yt_modoki2:
     SITE_NAME = "GOGTubeもどき"
-    VERSION = "Release 4.0.1 build-20250709"
+    VERSION = "Release 4.0.4 build-20251116"
     
     #設定保管オブジェクト
     class settings:
@@ -72,6 +72,7 @@ class yt_modoki2:
             self.uuid:str = uuid                    #リクエストアイテムを識別するためのUUID
             self.url:str = url                      #ダウンロードするURL
             self.play_directly:bool = play_directly #直接再生するかどうか
+            self.m3u8:Optional[str] = None
             self.is_video:bool = is_video           #動画か音声か
             self.status:Literal["queue","downloading","completed","dl_failure","deleted"] = "queue" #動画のステータス
             self.downloaded_percent:float = 0.0     #ダウンロード進捗
@@ -201,6 +202,7 @@ class yt_modoki2:
                                     "extractor_args": {
                                         "youtubepot-bgutilhttp": {"base_url":self._core.config.download["pot_provider"]}
                                     },
+                                    "remote-components":"ejs:github",
                                     "noplaylist":True
                                     }
                                 ).extract_info(self.item.url, False) or {}
@@ -210,12 +212,15 @@ class yt_modoki2:
                                 {
                                     "format":self.item.ytdlp_format,
                                     "noplaylist":True,
+                                    "remote-components":"ejs:github",
                                     "extractor_args": {
                                         "youtubepot-bgutilhttp": {"base_url":self._core.config.download["pot_provider"]}
                                     },
                                 }).extract_info(self.item.url, False) or {}
-                    except Exception:
+                    except Exception as error:
                         self.item.status = "dl_failure"
+                        self._core.log("ダウンロードに失敗しました: "+f"{error.__class__.__name__}: {error}" ,self.id,"ERROR")
+                        self.item.time["finish"] = datetime.datetime.now()
                         continue
 
                     #URLを抽出
@@ -249,7 +254,7 @@ class yt_modoki2:
                     "outtmpl":f"outputs/{self.id}/output.%(ext)s",
                     "noplaylist":True,
                     "noprogress": True,
-                    "writethumbnail":True,
+                    "writethumbnail":False,
                     "verbose":self._core.config.admin["debug"],
                     "debug_printtraffic":self._core.config.admin["debug"],
                     "source_address":self._core.config.download["bind_ip"],
@@ -276,7 +281,7 @@ class yt_modoki2:
 
                         case "ios" | _:
                             video="bv[vcodec!~='^(vp0?9|av0?1|h265)']/bv/best"
-                            audio="ba[ext='m4a']/ba[acodec='mp3']/ba"
+                            audio="ba[acodec='aac']/ba[ext='m4a']/ba[acodec='mp3']/ba"
 
                     ytdlp_option["format"]=f"({video})+({audio})"
                 #音声だけの場合
@@ -284,7 +289,7 @@ class yt_modoki2:
                     if self.item.audio_codec != "":
                         ytdlp_option["format"] = f"ba[acodec='{self.item.audio_codec}']/ba[acodec='aac']/ba"
                     else:
-                        ytdlp_option["format"] = "ba[ext='m4a']/ba[ext='mp3']/ba"
+                        ytdlp_option["format"] = "ba[ext='m4a']/ba[ext='mp3']/ba[acodec='m4a']/ba[acodec='opus']/ba"
                 
                 #フォーマットを保存
                 self.item.ytdlp_format = ytdlp_option["format"]
@@ -350,9 +355,9 @@ class yt_modoki2:
         try:
             rmtree("outputs") 
         except:
-            pass
+            pass     
         mkdir("outputs")
-        
+
 
     #新しいリクエストを受け取ったとき
     def new_request(
@@ -432,13 +437,17 @@ class yt_modoki2:
             
             self.count=0
             for i in self.video_dic.values():
-                #既にダウンロードされていないならスキップ
+                # 既にダウンロードされていないならスキップ
                 if i.status != "completed":
                     continue
-                #保存期限内ならスキップ
+                # 保存期限内ならスキップ
                 if i.time["save_period"] > datetime.datetime.now():
                     continue
-                #削除試行、失敗したら次へ
+                # もし直接再生ならスキップ
+                if i.play_directly == True:
+                    continue
+
+                # 削除試行、失敗したら次へ
                 try:
                     i.delete("自動削除")
                     self.count += 1

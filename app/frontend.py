@@ -158,6 +158,7 @@ def index():
         total_access = get_totalcount(),
         start_time = system.start_time.strftime("%Y年%m月%d日 %H時%M分"),
         version=system.VERSION,
+        ytdlp_version=core.yt_dlp.version.__version__,
         config=system.config
         )
 
@@ -170,7 +171,7 @@ def youtube_search():
     if query == None:
         return redirect(url_for("index"))
     entries:list[dict] = system.yt_search(query)
-    print(entries[0],flush=True)
+    system.log(f"[{session.get('id','anonymous')}] YouTube検索：{query}")
     return render_template("search_result.html",
                            query=query,
                            entries=entries,
@@ -233,7 +234,11 @@ def download_request():
     uuid, is_exist = system.new_request(link, play_directly, is_video, video_codec, audio_codec, 10, user)
     if not is_exist:
         add_dlcount()
-    response = make_response(redirect(url_for("status",uuid = uuid)))
+
+    if play_directly:
+        response = make_response(redirect(url_for("streaming",uuid = uuid)))
+    else:
+        response = make_response(redirect(url_for("status",uuid = uuid)))
     session["video_uuid"] = uuid
     return response
 
@@ -299,6 +304,55 @@ def status(uuid):
     #動画情報の設定
     output["url"] = f"/download/{uuid}"
     return render_template("status.html",
+                           output=output,
+                           item=item
+                           ),status_code
+
+#ステータスのページ
+@app.route("/streaming/<uuid>", methods=["GET"])
+def streaming(uuid):
+    output = {}
+    status_code = 200
+    #ID確認
+    try:
+        item = system.video_dic[uuid]
+    except:
+        output["error"] = "そのIDは存在しません"
+        return render_template("error.html", output = output,),404
+    #渡すデータを準備
+    if item.status == "downloading":
+        try:
+            if item.downloader == None:
+                raise IndexError
+            progress_info = system.downloader_list[item.downloader].progress_info
+        except:
+            system.log("ダウンロード進捗取得に失敗しました")
+    output["info"] = item.info
+    if "entries" in output["info"]:
+        output["info"] = output["info"]["entries"][0]
+    output["direct_url"] = item.direct_url
+    output["status"] = item.status
+    
+    #待機列の場合
+    match item.status:
+        case "queue":
+            output["message"]=f"待機列：現在{system.queue_list.index(uuid)+1}番目"
+            status_code = 202
+    #完了済みの場合
+        case "completed":
+            output["message"] = "ダウンロード完了"
+            status_code = 200
+    #エラーの場合
+        case "dl_failure":
+            output["message"] = "ダウンロードに失敗"
+            status_code = 500
+    #削除された場合
+        case "deleted":
+            output["message"] = "ファイルが削除されました"
+            status_code = 404
+    #動画情報の設定
+    output["url"] = f"/download/{uuid}"
+    return render_template("streaming.html",
                            output=output,
                            item=item
                            ),status_code

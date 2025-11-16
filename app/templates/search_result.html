@@ -46,7 +46,7 @@
                 </div>
                 <div class="px-4">
                     <h2 class="font-bold left-0 line-clamp-2 text-xl">{{ video.title }}</h2>
-                    <p class="text-xs">{{ video.uploader }} / {{ video.view_count | int_f }} 回再生 <a class="underline text-blue-600" href="{{ video.url  }}">元リンク</a></p>
+                    <p class="text-xs">{{ video.uploader }} / {{ video.view_count or 0 | int_f }} 回再生 <a class="underline text-blue-600" href="{{ video.url  }}">元リンク</a></p>
                 </div>
             </button>
         </form>

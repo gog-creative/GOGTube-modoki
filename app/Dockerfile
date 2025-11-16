@@ -31,7 +31,8 @@ EXPOSE 80
 RUN python -m pip install -r /app/requirements.txt\
     && python -m pip install --pre yt-dlp\
     && apk update\
-    && apk add ffmpeg
+    && apk add ffmpeg\
+    && apk add deno
 
 EXPOSE 80
 CMD ["python", "server.py"]
