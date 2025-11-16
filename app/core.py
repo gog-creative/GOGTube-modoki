@@ -202,7 +202,7 @@ class yt_modoki2:
                                     "extractor_args": {
                                         "youtubepot-bgutilhttp": {"base_url":self._core.config.download["pot_provider"]}
                                     },
-                                    "remote-components":"ejs:github",
+                                    "remote_components":"ejs:github",
                                     "noplaylist":True
                                     }
                                 ).extract_info(self.item.url, False) or {}
@@ -212,7 +212,7 @@ class yt_modoki2:
                                 {
                                     "format":self.item.ytdlp_format,
                                     "noplaylist":True,
-                                    "remote-components":"ejs:github",
+                                    "remote_components":"ejs:github",
                                     "extractor_args": {
                                         "youtubepot-bgutilhttp": {"base_url":self._core.config.download["pot_provider"]}
                                     },
@@ -258,6 +258,8 @@ class yt_modoki2:
                     "verbose":self._core.config.admin["debug"],
                     "debug_printtraffic":self._core.config.admin["debug"],
                     "source_address":self._core.config.download["bind_ip"],
+                    # EJS（JS challenges solver script）
+                    "remote_components":"ejs:github",
                     #POトークン発行
                     "extractor_args": {
                         "youtubepot-bgutilhttp": {"base_url":self._core.config.download["pot_provider"]}
