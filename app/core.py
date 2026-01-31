@@ -443,8 +443,9 @@ class yt_modoki2:
                 if i.status != "completed":
                     continue
                 # 保存期限内ならスキップ
-                if i.time["save_period"] > datetime.datetime.now():
-                    continue
+                if i.time["save_period"]:
+                    if i.time["save_period"] > datetime.datetime.now():
+                        continue
                 # もし直接再生ならスキップ
                 if i.play_directly == True:
                     continue
