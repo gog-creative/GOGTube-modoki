@@ -16,7 +16,7 @@ YT-dlpラッパーのバックエンドスクリプト。
 
 import threading
 from time import sleep
-from typing import Optional, Any, Literal
+from typing import Optional, Any, Literal, TYPE_CHECKING
 import uuid
 from glob import glob
 from shutil import rmtree
@@ -27,6 +27,9 @@ import datetime
 from yt_dlp import YoutubeDL
 import yt_dlp
 import yt_dlp.version
+
+if TYPE_CHECKING:
+    from yt_dlp import _Params
 
 class yt_modoki2:
     SITE_NAME = "GOGTubeもどき"
@@ -85,7 +88,7 @@ class yt_modoki2:
             self.direct_url:Optional[str] = None    #直接再生するURL
             
             #動画の情報
-            self.info:dict[str,Any] = {}
+            self.info:Any = {}
 
             #時間情報
             self.time = {
@@ -196,27 +199,35 @@ class yt_modoki2:
                     try:
                         if self.item.is_video:
                             self.item.ytdlp_format="best"
-                            self.item.info = YoutubeDL(
+                            with YoutubeDL(
                                 {
                                     "format":self.item.ytdlp_format,
                                     "extractor_args": {
                                         "youtubepot-bgutilhttp": {"base_url":self._core.config.download["pot_provider"]}
                                     },
-                                    "remote_components":"ejs:github",
-                                    "noplaylist":True
+                                    "remote_components":{"ejs:github"},
+                                    "noplaylist":True,
+                                    "verbose":self._core.config.admin["debug"],
+                                    "debug_printtraffic":self._core.config.admin["debug"],
                                     }
-                                ).extract_info(self.item.url, False) or {}
+                            ) as ydl:
+                                self.item.info = ydl.extract_info(self.item.url, False) or {}
+
                         else:
                             self.item.ytdlp_format = "ba[ext='m4a']/ba[acodec='mp3']/ba"
-                            self.item.info = YoutubeDL(
+                            with YoutubeDL(
                                 {
                                     "format":self.item.ytdlp_format,
                                     "noplaylist":True,
-                                    "remote_components":"ejs:github",
+                                    "verbose":self._core.config.admin["debug"],
+                                    "debug_printtraffic":self._core.config.admin["debug"],
+                                    "remote_components":{"ejs:github"},
                                     "extractor_args": {
                                         "youtubepot-bgutilhttp": {"base_url":self._core.config.download["pot_provider"]}
                                     },
-                                }).extract_info(self.item.url, False) or {}
+                                }) as ydl:
+                                self.item.info = ydl.extract_info(self.item.url, False) or {}
+                            
                     except Exception as error:
                         self.item.status = "dl_failure"
                         self._core.log("ダウンロードに失敗しました: "+f"{error.__class__.__name__}: {error}" ,self.id,"ERROR")
@@ -256,10 +267,11 @@ class yt_modoki2:
                     "noprogress": True,
                     "writethumbnail":False,
                     "verbose":self._core.config.admin["debug"],
+                    "listformats_table":self._core.config.admin["debug"],
                     "debug_printtraffic":self._core.config.admin["debug"],
                     "source_address":self._core.config.download["bind_ip"],
                     # EJS（JS challenges solver script）
-                    "remote_components":"ejs:github",
+                    "remote_components":{"ejs:github"},
                     #POトークン発行
                     "extractor_args": {
                         "youtubepot-bgutilhttp": {"base_url":self._core.config.download["pot_provider"]}
@@ -285,7 +297,8 @@ class yt_modoki2:
                             video="bv[vcodec!~='^(vp0?9|av0?1|h265)']/bv/best"
                             audio="ba[acodec='aac']/ba[ext='m4a']/ba[acodec='mp3']/ba"
 
-                    ytdlp_option["format"]=f"({video})+({audio})"
+                    ytdlp_option["format"]=f"(({video})+({audio}))/b"
+
                 #音声だけの場合
                 else:
                     if self.item.audio_codec != "":
@@ -301,7 +314,8 @@ class yt_modoki2:
                 self.item.time["start_download"] = datetime.datetime.now()
 
                 try:
-                    self.item.info = YoutubeDL(ytdlp_option).extract_info(self.item.url) or {}
+                    with YoutubeDL(ytdlp_option) as ydl:
+                        self.item.info = ydl.extract_info(self.item.url) or {}
                     self.item.time["finish_download"] = datetime.datetime.now()
                     if bool(glob(f"outputs/{self.id}/output.*")) == False:
                         raise FileNotFoundError
@@ -415,7 +429,8 @@ class yt_modoki2:
         return self._uuid, False
     
     def yt_search(self, query:str) -> list[dict]:
-        info = YoutubeDL().extract_info(f"ytsearch38:{query}",download=False,process=False) or {"entries":[]}
+        with YoutubeDL() as ydl:
+            info = ydl.extract_info(f"ytsearch38:{query}",download=False,process=False) or {"entries":[]}
         return list(info["entries"])
 
     #動画ファイルの合計サイズを計算

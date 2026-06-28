@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% block robots %}{% endblock %}
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icons/512.png') }}" type="image/png">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/512.png') }}" type="image/png">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>{% block title %}{{ site_name }}{% endblock %}</title>
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <header class="site">
+        <div class="bar">
+            <div class="brand">
+                <span class="logo" aria-hidden="true"></span>
+                <div>
+                    <h1><a href="/" style="color:inherit">{{ site_name }}</a></h1>
+                    <small>オープンソースの YouTube 動画ダウンローダー</small>
+                </div>
+            </div>
+            <nav>
+                <a href="/">ホーム</a>
+                <a href="/status">ダウンロード状況</a>
+                {% if total_access is defined %}<span class="counter" title="累計アクセス">{{ total_access }}</span>{% endif %}
+            </nav>
+        </div>
+        <form class="search" action="/search" method="get">
+            <input type="search" name="q" value="{{ query if query is defined else '' }}" placeholder="YouTube を検索…">
+            <button type="submit">検索</button>
+        </form>
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block footer %}
+    {% if version is defined %}
+    <footer class="site">
+        {{ site_name }} {{ version }}（yt-dlp {{ ytdlp_version }}）<br>
+        コンテナ起動：{{ start_time }} から <span class="counter">{{ launch_total }}</span> 本<br>
+        合計で <span class="counter">{{ total_download }}</span> 本の動画/音声がダウンロードされました。
+    </footer>
+    {% endif %}
+    {% endblock %}
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>
