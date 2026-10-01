@@ -4,7 +4,10 @@ WORKDIR /app
 
 COPY frontend.py /app/
 COPY core.py /app/
+COPY streaming.py /app/
+COPY stream_smoke.py /app/
 COPY server.py /app/
+COPY gunicorn.conf.py /app/
 COPY requirements.txt /app/
 COPY templates/ /app/templates
 COPY static/ /app/static
@@ -25,6 +28,7 @@ ENV STORAGE_TIME_FORMAT='%Y/%m/%d %H:%M:%S'
 ENV STORAGE_LIMIT_SIZE=3000
 ENV STORAGE_AUTO_DELETE=True
 ENV TZ=Asia/Tokyo
+ENV STREAM_REMUX_ENABLED=false
 
 EXPOSE 80
 

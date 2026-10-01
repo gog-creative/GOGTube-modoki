@@ -9,7 +9,7 @@
     <form class="card" action="/request" method="POST">
         <input type="hidden" name="link" value="{{ video.url }}">
         <input type="hidden" name="file_type" value="video">
-        <input type="hidden" name="play_directly" value="on">
+        <input type="hidden" name="play_directly" value="{{ 'on' if stream_enabled else 'off' }}">
         <input type="hidden" name="video_codec" value="">
         <input type="hidden" name="audio_codec" value="">
         <button type="submit">

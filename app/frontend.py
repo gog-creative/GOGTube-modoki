@@ -10,6 +10,7 @@ try:
 except:
     raise ImportError("Please install requestment.txt modules before run.\nTo install modules, please execute 'python -m pip install -r requestment.txt'.")
 import core
+from streaming import register_stream_routes, StreamError, normalize_source_url
 from os.path import basename,splitext
 from glob import glob
 from uuid import uuid4
@@ -53,6 +54,11 @@ app = Flask(__name__)
 limiter = Limiter(lambda:request.headers.get('cf-connecting-ip') or get_remote_address(), app=app, default_limits=["60 per minute"])
 app.secret_key = str(uuid4())
 auth = HTTPDigestAuth()
+register_stream_routes(app, system)
+
+@app.context_processor
+def stream_settings():
+    return {"stream_enabled": system.streams.enabled}
 
 #{google_id:User()}
 user_dic:dict[str, "User"] = {}
@@ -218,7 +224,7 @@ def download_request():
     #渡されたのがURLかキーワードか
     match type:
         case "url":
-            pass
+            link = normalize_source_url(link)
         case "ytsearch":
             link = "ytsearch:"+link
 
@@ -271,10 +277,16 @@ def status(uuid):
             progress_info = system.downloader_list[item.downloader].progress_info
         except:
             system.log("ダウンロード進捗取得に失敗しました")
+    if item.play_directly and item.status == "completed" and system.streams.enabled:
+        try:
+            system.streams.media(item)
+        except StreamError:
+            pass  # Render the player and its safe error so the user can retry.
     output["info"] = item.info
     if "entries" in output["info"]:
         output["info"] = output["info"]["entries"][0]
-    output["direct_url"] = item.direct_url
+    output["stream_url"] = url_for("stream", uuid=uuid)
+    output["stream_enabled"] = system.streams.enabled
     output["status"] = item.status
     
     #待機列の場合
@@ -291,7 +303,7 @@ def status(uuid):
             except:output["message"]="ダウンロードを開始中..."
     #完了済みの場合
         case "completed":
-            output["message"] = "ダウンロード完了"
+            output["message"] = "サーバー経由の再生準備ができました" if item.play_directly else "ダウンロード完了"
             status_code = 200
     #エラーの場合
         case "dl_failure":
@@ -327,10 +339,16 @@ def streaming(uuid):
             progress_info = system.downloader_list[item.downloader].progress_info
         except:
             system.log("ダウンロード進捗取得に失敗しました")
+    if item.play_directly and item.status == "completed" and system.streams.enabled:
+        try:
+            system.streams.media(item)
+        except StreamError:
+            pass  # Render the player and its safe error so the user can retry.
     output["info"] = item.info
     if "entries" in output["info"]:
         output["info"] = output["info"]["entries"][0]
-    output["direct_url"] = item.direct_url
+    output["stream_url"] = url_for("stream", uuid=uuid)
+    output["stream_enabled"] = system.streams.enabled
     output["status"] = item.status
     
     #待機列の場合
@@ -340,7 +358,7 @@ def streaming(uuid):
             status_code = 202
     #完了済みの場合
         case "completed":
-            output["message"] = "ダウンロード完了"
+            output["message"] = "サーバー経由の再生準備ができました" if item.play_directly else "ダウンロード完了"
             status_code = 200
     #エラーの場合
         case "dl_failure":
@@ -366,6 +384,9 @@ def status_api(uuid):
         return {"error":"そのIDは存在しません"},404
     return {
         "status":item.status,
+        "stream_metadata": item.info if item.play_directly else None,
+        "stream_error": item.stream_state.error if item.play_directly else None,
+        "stream_sessions": item.stream_state.sessions if item.play_directly else 0,
         "downloaded_percent":item.downloaded_percent,
         "waiting_list_index":system.queue_list.index(uuid) if item.status == "queue" else None,
         "waiting_list_size":len(system.queue_list)

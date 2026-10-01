@@ -27,6 +27,7 @@ import datetime
 from yt_dlp import YoutubeDL
 import yt_dlp
 import yt_dlp.version
+from streaming import StreamManager, StreamState, ytdlp_options
 
 if TYPE_CHECKING:
     from yt_dlp import _Params
@@ -59,6 +60,16 @@ class yt_modoki2:
                 }
                 }
 
+            self.stream = {
+                "enabled": environ.get("STREAM_REMUX_ENABLED", "false").lower() == "true",
+                "max_sessions": max(1, int(environ.get("STREAM_MAX_SESSIONS", "2"))),
+                "max_duration": max(1, int(environ.get("STREAM_MAX_DURATION", "14400"))),
+                "max_height": min(1080, max(1, int(environ.get("STREAM_MAX_HEIGHT", "1080")))),
+                "chunk_size": min(1048576, max(1024, int(environ.get("STREAM_CHUNK_SIZE", "65536")))),
+                "refresh_margin": max(0, int(environ.get("STREAM_URL_REFRESH_MARGIN", "300"))),
+                "provider": self.dic["DOWNLOAD"]["pot_provider"],
+                "bind_ip": self.dic["DOWNLOAD"]["bind_ip"],
+            }
             self._core: yt_modoki2 = super
             self.admin = self.dic["ADMIN"]
             self.download = self.dic["DOWNLOAD"]
@@ -85,7 +96,7 @@ class yt_modoki2:
             self.downloader :Optional[int] = None   #ダウンローダーID
             self.user:Any = user                    #ユーザー識別
             self.ytdlp_format:Optional[str] = None  #YT-dlpに渡すフォーマットの絞り込み
-            self.direct_url:Optional[str] = None    #直接再生するURL
+            self.stream_state = StreamState()  #署名URLは公開メタデータと分離する
             
             #動画の情報
             self.info:Any = {}
@@ -193,94 +204,26 @@ class yt_modoki2:
                 # ダウンローダーIDを設定
                 self.item.downloader = thread_id
                 
-                #直接ダウンロードの場合
+                # 直接再生のURL抽出は /stream へのアクセス時に行う。
                 if self.item.play_directly:
-                    self.item.status = "downloading"
-                    try:
-                        if self.item.is_video:
-                            self.item.ytdlp_format="best"
-                            with YoutubeDL(
-                                {
-                                    "format":self.item.ytdlp_format,
-                                    "extractor_args": {
-                                        "youtubepot-bgutilhttp": {"base_url":self._core.config.download["pot_provider"]}
-                                    },
-                                    "remote_components":{"ejs:github"},
-                                    "noplaylist":True,
-                                    "verbose":self._core.config.admin["debug"],
-                                    "debug_printtraffic":self._core.config.admin["debug"],
-                                    }
-                            ) as ydl:
-                                self.item.info = ydl.extract_info(self.item.url, False) or {}
-
-                        else:
-                            self.item.ytdlp_format = "ba[ext='m4a']/ba[acodec='mp3']/ba"
-                            with YoutubeDL(
-                                {
-                                    "format":self.item.ytdlp_format,
-                                    "noplaylist":True,
-                                    "verbose":self._core.config.admin["debug"],
-                                    "debug_printtraffic":self._core.config.admin["debug"],
-                                    "remote_components":{"ejs:github"},
-                                    "extractor_args": {
-                                        "youtubepot-bgutilhttp": {"base_url":self._core.config.download["pot_provider"]}
-                                    },
-                                }) as ydl:
-                                self.item.info = ydl.extract_info(self.item.url, False) or {}
-                            
-                    except Exception as error:
-                        self.item.status = "dl_failure"
-                        self._core.log("ダウンロードに失敗しました: "+f"{error.__class__.__name__}: {error}" ,self.id,"ERROR")
-                        self.item.time["finish"] = datetime.datetime.now()
-                        continue
-
-                    #URLを抽出
-                    if "entries" in self.item.info:
-                        formats = self.item.info["entries"][0]["formats"]
-                        target_format_id = self.item.info["entries"][0].get("format_id")
-                    else:
-                        formats = self.item.info["formats"]
-                        target_format_id = self.item.info.get("format_id")
-
-                    target_url = None
-
-                    for i in formats:
-                        if i["format_id"] == target_format_id:
-                            target_url = i["url"]
-                            break
-
-                    self.item.direct_url = target_url
-                    
-                    #完了
-                    self._core.log("処理が完了しました", str(self.item.uuid))
-                    self.item.time["finish"] = datetime.datetime.now()
                     self.item.status = "completed"
+                    self.item.time["finish"] = datetime.datetime.now()
                     continue
 
                 # ステータス更新
                 self.item.status = "downloading"
                 
                 # YT-dlp オプション設定
-                ytdlp_option = {
-                    "outtmpl":f"outputs/{self.id}/output.%(ext)s",
-                    "noplaylist":True,
-                    "noprogress": True,
-                    "writethumbnail":False,
-                    "verbose":self._core.config.admin["debug"],
-                    "listformats_table":self._core.config.admin["debug"],
-                    "debug_printtraffic":self._core.config.admin["debug"],
-                    "source_address":self._core.config.download["bind_ip"],
-                    # EJS（JS challenges solver script）
-                    "remote_components":{"ejs:github"},
-                    #POトークン発行
-                    "extractor_args": {
-                        "youtubepot-bgutilhttp": {"base_url":self._core.config.download["pot_provider"]}
-                    },
-                    #"throttled_rate":"50K",
-                    #"retries":"3",
-                    "progress_hooks":[self.progress_hook]
-                    }
-                
+                ytdlp_option = ytdlp_options(
+                    self._core.config.download["pot_provider"],
+                    self._core.config.download["bind_ip"],
+                )
+                ytdlp_option.update({
+                    "outtmpl": f"outputs/{self.id}/output.%(ext)s",
+                    "noprogress": True, "writethumbnail": False,
+                    "progress_hooks": [self.progress_hook],
+                })
+
                 ytdlp_option["merge_output_format"]="mp4"
 
                 #動画/音声を判定しフォーマットを選択
@@ -321,7 +264,7 @@ class yt_modoki2:
                         raise FileNotFoundError
                 
                 except Exception as error:
-                    self._core.log("ダウンロードに失敗しました: "+f"{error.__class__.__name__}: {error}" ,self.id,"ERROR")
+                    self._core.log(f"ダウンロードに失敗しました: {error.__class__.__name__}" ,self.id,"ERROR")
                     self.item.time["finish"] = datetime.datetime.now()
                     self.item.status = "dl_failure"
                     continue
@@ -355,6 +298,7 @@ class yt_modoki2:
         #ダウンローダーのスレッドリスト
         self.downloader_list:list[yt_modoki2.downloader] = []
         self.config = self.settings(self)
+        self.streams = StreamManager(self.config.stream, self.log)
 
         #起動時刻の記録
         self.start_time = datetime.datetime.now()
@@ -373,6 +317,7 @@ class yt_modoki2:
         except:
             pass     
         mkdir("outputs")
+        threading.Thread(target=self.streams.diagnostics, daemon=True).start()
 
 
     #新しいリクエストを受け取ったとき
@@ -423,13 +368,17 @@ class yt_modoki2:
         try:
             mkdir(f"outputs/{self._uuid}")
             self.log(f"'{user}'から新しいリクエストを受け取りました: {url}",self._uuid)
-            self.queue_list.append(self._uuid)
+            if play_directly:
+                self.video_dic[self._uuid].status = "completed"
+                self.video_dic[self._uuid].time["finish"] = datetime.datetime.now()
+            else:
+                self.queue_list.append(self._uuid)
         except OSError as e:
             self.video_dic[self._uuid].status = "dl_failure"
         return self._uuid, False
     
     def yt_search(self, query:str) -> list[dict]:
-        with YoutubeDL() as ydl:
+        with YoutubeDL(ytdlp_options(self.config.download["pot_provider"], self.config.download["bind_ip"])) as ydl:
             info = ydl.extract_info(f"ytsearch38:{query}",download=False,process=False) or {"entries":[]}
         return list(info["entries"])
 
